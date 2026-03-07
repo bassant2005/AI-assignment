@@ -121,6 +121,7 @@ collect_books(_, Acc, L) :-
     reverse_list(Acc, L).         % reverse accumulator to preserve original order
 
 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 2 : borrowers_count(Book, N)
 % Purpose:
@@ -160,9 +161,51 @@ list_length([_|T], N) :-
     list_length(T, N1),
     N is N1 + 1.
 
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%% Rawda put ur work here plz
+% Task 3 : most_borrowed_book(B)
+% Purpose:
+%   Finds the book that has been borrowed the most times
+%   in the library system.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+most_borrowed_book(B) :-
+    collect_books_list([], Books),
+    find_most_borrowed(Books, none, 0, B),
+    !.   % stop extra answers
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% collect_books_list(Acc, Books)
+% Purpose:
+%   Collects all books from book/2 facts into a list
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+collect_books_list(Acc, Books) :-
+    book(Book, _),
+    \+ my_member(Book, Acc),
+    collect_books_list([Book|Acc], Books).
+
+collect_books_list(Acc, Books) :-
+    reverse_list(Acc, Books).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% find_most_borrowed(Books, CurrentBest, CurrentMax, BestBook)
+% Purpose:
+%   Iterates through all books and keeps the one with
+%   the highest borrow count
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+find_most_borrowed([], BestBook, _, BestBook).
+
+find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
+    borrowers_count(Book, Count),
+    Count > CurrentMax,
+    find_most_borrowed(T, Book, Count, BestBook).
+
+find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
+    borrowers_count(Book, Count),
+    Count =< CurrentMax,
+    find_most_borrowed(T, CurrentBest, CurrentMax, BestBook).
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 4 : ratings_of_book(Book, L)
@@ -189,6 +232,8 @@ collect_ratings(Book, Acc, L) :-
 % Case 2: no more ratings
 collect_ratings(_, Acc, L) :-
     reverse_list(Acc, L).
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 5 : top_reviewer(Student)
@@ -220,50 +265,7 @@ higher_exists(Score) :-
     rating(_, _, Other),
     Other > Score.
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Task 3 : most_borrowed_book(B)
-% Purpose:
-%   Finds the book that has been borrowed the most times
-%   in the library system.
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-most_borrowed_book(B) :-
-    collect_books_list([], Books),
-    find_most_borrowed(Books, none, 0, B),
-    !.   % stop extra answers
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% collect_books_list(Acc, Books)
-% Purpose:
-%   Collects all books from book/2 facts into a list
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-collect_books_list(Acc, Books) :-
-    book(Book, _),
-    \+ my_member(Book, Acc),
-    collect_books_list([Book|Acc], Books).
-
-collect_books_list(Acc, Books) :-
-    reverse_list(Acc, Books).
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% find_most_borrowed(Books, CurrentBest, CurrentMax, BestBook)
-% Purpose:
-%   Iterates through all books and keeps the one with
-%   the highest borrow count
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-find_most_borrowed([], BestBook, _, BestBook).
-
-find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
-    borrowers_count(Book, Count),
-    Count > CurrentMax,
-    find_most_borrowed(T, Book, Count, BestBook).
-
-find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
-    borrowers_count(Book, Count),
-    Count =< CurrentMax,
-    find_most_borrowed(T, CurrentBest, CurrentMax, BestBook).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 6 : most_common_topic_for_student(Student, Topic)
@@ -338,4 +340,4 @@ most_common_topic_for_student(Student, Topic) :-
     books_borrowed_by_student(Student, Books),
     collect_topics_from_books(Books, [], AllTopics),
     find_most_common(AllTopics, none, 0, Topic),
-    !.   % <-- cut to prevent extra answers
+    !.   % cut to prevent extra answers
