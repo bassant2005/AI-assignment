@@ -221,6 +221,51 @@ higher_exists(Score) :-
     Other > Score.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Task 3 : most_borrowed_book(B)
+% Purpose:
+%   Finds the book that has been borrowed the most times
+%   in the library system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+most_borrowed_book(B) :-
+    collect_books_list([], Books),
+    find_most_borrowed(Books, none, 0, B),
+    !.   % stop extra answers
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% collect_books_list(Acc, Books)
+% Purpose:
+%   Collects all books from book/2 facts into a list
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+collect_books_list(Acc, Books) :-
+    book(Book, _),
+    \+ my_member(Book, Acc),
+    collect_books_list([Book|Acc], Books).
+
+collect_books_list(Acc, Books) :-
+    reverse_list(Acc, Books).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% find_most_borrowed(Books, CurrentBest, CurrentMax, BestBook)
+% Purpose:
+%   Iterates through all books and keeps the one with
+%   the highest borrow count
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+find_most_borrowed([], BestBook, _, BestBook).
+
+find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
+    borrowers_count(Book, Count),
+    Count > CurrentMax,
+    find_most_borrowed(T, Book, Count, BestBook).
+
+find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
+    borrowers_count(Book, Count),
+    Count =< CurrentMax,
+    find_most_borrowed(T, CurrentBest, CurrentMax, BestBook).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 6 : most_common_topic_for_student(Student, Topic)
 % Purpose:
 %   Finds the most common topic in books borrowed by a specific student
