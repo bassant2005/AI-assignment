@@ -31,6 +31,7 @@ book(ai_intro, dr_mona).
 
 borrowed(ali, prolog_fundamentals).
 borrowed(ali, list_programming).
+borrowed(ali, list_programming).
 borrowed(sara, recursion_in_depth).
 borrowed(sara, ai_intro).
 borrowed(omar, recursion_in_depth).
@@ -195,7 +196,7 @@ collect_books_list(Acc, Books) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 find_most_borrowed([], BestBook, _, BestBook).
 
-find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
+find_most_borrowed([Book|T], _ , CurrentMax, BestBook) :-
     borrowers_count(Book, Count),
     Count > CurrentMax,
     find_most_borrowed(T, Book, Count, BestBook).
@@ -214,8 +215,8 @@ find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
 %   as a list of tuples (Student, Score).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ratings_of_book(Book, L) :-
-    collect_ratings(Book, [], L), % cut: stop after the first solution (no backtracking)
-    !.
+    collect_ratings(Book, [], L), 
+    !.   % cut: stop after the first solution (no backtracking)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % collect_ratings(Book, Acc, L)
@@ -318,7 +319,7 @@ count_topic(Topic, [H|T], Count) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 find_most_common([], Topic, _, Topic) :- !.
 
-find_most_common([H|T], CurrentTopic, CurrentCount, Topic) :-
+find_most_common([H|T], _ , CurrentCount, Topic) :-
     count_topic(H, [H|T], Count),
     Count > CurrentCount,
     find_most_common(T, H, Count, Topic),
