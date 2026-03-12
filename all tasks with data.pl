@@ -1,8 +1,8 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%% team members %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Name : Bassant Tarek , ID : 20231037 , Work : Tasks (1,4)
-% Name : Rahma Bahgat , ID : 20231056 , Work : Task (6)
-% 
-% 
+% Name : Rahma Bahgat  , ID : 20231056 , Work : Task (6)
+% Name : Mariam Ehab   , ID : 20231160 , Work : Tasks (2,5)
+% Name : Rawda Raafat  , ID : 20231067 , Work : Task (3)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -30,6 +30,7 @@ book(ai_intro, dr_mona).
 % borrowed(Student, Book)
 
 borrowed(ali, prolog_fundamentals).
+borrowed(ali, list_programming).
 borrowed(ali, list_programming).
 borrowed(sara, recursion_in_depth).
 borrowed(sara, ai_intro).
@@ -123,14 +124,99 @@ collect_books(_, Acc, L) :-
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Task 2 : borrowers_count(Book, N)
+% Purpose:
+%   Counts how many students borrowed a specific book
+%   Controls backtracking so only one answer is returned.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+borrowers_count(Book, N) :-
+    collect_borrowers(Book, [], L),
+    list_length(L, N),
+    !.   % no backtracking
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% collect_borrowers(Book, Acc, L)
+% Purpose:
+%   Traverse all borrowed facts to find students who
+%   borrowed the given book and put them in a list.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Case 1: Found a student who borrowed the book but not already in Acc
+collect_borrowers(Book, Acc, L) :-
+    borrowed(Student, Book),
+    \+ my_member(Student, Acc),
+    collect_borrowers(Book, [Student|Acc], L).
+
+% Case 2: No more students to collect
+collect_borrowers(_, Acc, Acc).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% list_length(List, N)
+% Purpose:
+%   Counts the number of elements in a list
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Base case: empty list has length 0
+list_length([], 0).
+
+% Recursive case: length of list = 1 + length of tail
+list_length([_|T], N) :-
+    list_length(T, N1),
+    N is N1 + 1.
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Task 3 : most_borrowed_book(B)
+% Purpose:
+%   Finds the book that has been borrowed the most times
+%   in the library system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+most_borrowed_book(B) :-
+    collect_books_list([], Books),
+    find_most_borrowed(Books, none, 0, B),
+    !.   % stop extra answers
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% collect_books_list(Acc, Books)
+% Purpose:
+%   Collects all books from book/2 facts into a list
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+collect_books_list(Acc, Books) :-
+    book(Book, _),
+    \+ my_member(Book, Acc),
+    collect_books_list([Book|Acc], Books).
+
+collect_books_list(Acc, Books) :-
+    reverse_list(Acc, Books).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% find_most_borrowed(Books, CurrentBest, CurrentMax, BestBook)
+% Purpose:
+%   Iterates through all books and keeps the one with
+%   the highest borrow count
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+find_most_borrowed([], BestBook, _, BestBook).
+
+find_most_borrowed([Book|T], _ , CurrentMax, BestBook) :-
+    borrowers_count(Book, Count),
+    Count > CurrentMax,
+    find_most_borrowed(T, Book, Count, BestBook).
+
+find_most_borrowed([Book|T], CurrentBest, CurrentMax, BestBook) :-
+    borrowers_count(Book, Count),
+    Count =< CurrentMax,
+    find_most_borrowed(T, CurrentBest, CurrentMax, BestBook).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 4 : ratings_of_book(Book, L)
 % Purpose:
 %   Collects all ratings for a specific book and returns them
 %   as a list of tuples (Student, Score).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ratings_of_book(Book, L) :-
-    collect_ratings(Book, [], L), % cut: stop after the first solution (no backtracking)
-    !.
+    collect_ratings(Book, [], L), 
+    !.   % cut: stop after the first solution (no backtracking)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % collect_ratings(Book, Acc, L)
@@ -147,6 +233,40 @@ collect_ratings(Book, Acc, L) :-
 % Case 2: no more ratings
 collect_ratings(_, Acc, L) :-
     reverse_list(Acc, L).
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Task 5 : top_reviewer(Student)
+% Purpose:
+%   Finds the student who gave the highest single rating
+%   in the whole system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+top_reviewer(Student) :-
+    find_top(Student, _),
+    !.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% find_top(Student, Score)
+% Purpose:
+%   Finds a student whose rating Score has no higher
+%   rating anywhere else in the system.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+find_top(Student, Score) :-
+    rating(Student, _, Score), % get a rating from any student
+    \+ higher_exists(Score).   % make sure no higher rating exists
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% higher_exists(Score)
+% Purpose:
+%   Succeeds if there is any rating in the system
+%   that is strictly higher than Score.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+higher_exists(Score) :-
+    rating(_, _, Other),
+    Other > Score.
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Task 6 : most_common_topic_for_student(Student, Topic)
@@ -199,7 +319,7 @@ count_topic(Topic, [H|T], Count) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 find_most_common([], Topic, _, Topic) :- !.
 
-find_most_common([H|T], CurrentTopic, CurrentCount, Topic) :-
+find_most_common([H|T], _ , CurrentCount, Topic) :-
     count_topic(H, [H|T], Count),
     Count > CurrentCount,
     find_most_common(T, H, Count, Topic),
@@ -221,4 +341,4 @@ most_common_topic_for_student(Student, Topic) :-
     books_borrowed_by_student(Student, Books),
     collect_topics_from_books(Books, [], AllTopics),
     find_most_common(AllTopics, none, 0, Topic),
-    !.   % <-- cut to prevent extra answers
+    !.   % cut to prevent extra answers
