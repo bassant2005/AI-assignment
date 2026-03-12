@@ -8,7 +8,7 @@
 
 
 %%%%%%%%%%%%%%%%%%%%%%% Helpers %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Manual member function : cheack if the element is a member 
+% Manual member function: check if the element is a member 
 % in the list 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Base case: X is the head of the list
