@@ -1,9 +1,9 @@
-% Student 1 : Bassant tarek , ID : 20231037 
-%	work (functions) : find_robot() ,get_cell() ,within_bounds() 
-%	,valid_cell() ,move()
+% Student 1 : Bassant Tarek, ID : 20231037 
+%	work (functions) : find_robot() , get_cell() , within_bounds() 
+%	, valid_cell() , move()
 
-%  Student 2 :  , ID :  
-%	work (functions) : 
+%  Student 2 : Mariam Ehab, ID : 20231160 
+%	work (functions) : initial_state() , update_state() , expand()
 
 % Student 3 :  , ID :  
 %	work (functions) : 
@@ -11,8 +11,6 @@
 % Student 4 :  , ID :  
 %	work (functions) : 
 % ---------------------------------------------------------
-
-
 
 % Example grid (change for testing)
 grid([
@@ -146,3 +144,51 @@ run_greedy(ResultPath, Steps, Score) :-
     Steps is Len - 1,
     heuristic(state(_, Path, []), Grid, Score),
     ResultPath = Path.
+
+
+% =========================================================
+% initial_state(+Grid, -State)
+% Purpose: Builds the initial state before search starts
+% =========================================================
+initial_state(Grid, state((R,C), [(R,C)], 100, Survivors)) :-
+    find_robot(Grid, R, C),
+    get_cell(Grid, R, C, Value),
+    ( Value = s -> Survivors is 1 ; Survivors is 0 ).
+
+% =========================================================
+% update_state(+State, +NewPos, +Grid, -NewState)
+% Purpose: Updates state after moving to a new position
+% =========================================================
+update_state(state(_, Path, Battery, S), NewPos, Grid,
+             state(NewPos, NewPath, NewBattery, NewS)) :-
+
+    % Update path
+    append(Path, [NewPos], NewPath),
+
+    % Decrease battery
+    NewBattery is Battery - 10,
+
+    % Check if new cell has a survivor
+    NewPos = (R,C),
+    get_cell(Grid, R, C, Value),
+
+    ( Value = s -> NewS is S + 1 ; NewS is S ).
+
+% =========================================================
+% expand(+State, +Grid, -Children)
+% Purpose: Generates all valid successor states
+% =========================================================
+expand(state(Pos, Path, Battery, S), Grid, Children) :-
+    Battery > 0,
+    findall(
+        Child,
+        (
+            valid_move(Grid, Pos, NewPos),
+            \+ member(NewPos, Path),
+            update_state(state(Pos, Path, Battery, S), NewPos, Grid, Child)
+        ),
+        Children
+    ).
+
+% No expansion if battery is empty
+expand(state(_, _, 0, _), _, []).
