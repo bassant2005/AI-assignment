@@ -119,9 +119,71 @@ valid_move(Grid, (R,C), (R1,C1)) :-
     valid_cell(Grid, R1, C1).
 
 
-%%%%%%%%%%%%%%%%%%%
-%REMAINING WORK 
-%%%%%%%%%%%%%%%%%%%
+% initial_state(+Grid, -State)
+% Purpose: Builds the initial state before search starts
+% =========================================================
+initial_state(Grid, state((R,C), [(R,C)], 100, Survivors)) :-
+    find_robot(Grid, R, C),
+    get_cell(Grid, R, C, Value),
+    ( Value = s -> Survivors is 1 ; Survivors is 0 ).
+
+
+% update_state(+State, +NewPos, +Grid, -NewState)
+% Purpose: Updates state after moving to a new position
+% =========================================================
+update_state(state(_, Path, Battery, S), NewPos, Grid,
+             state(NewPos, NewPath, NewBattery, NewS)) :-
+
+    % Update path
+    append(Path, [NewPos], NewPath),
+
+    % Decrease battery
+    NewBattery is Battery - 10,
+
+    % Check if new cell has a survivor
+    NewPos = (R,C),
+    get_cell(Grid, R, C, Value),
+
+    ( Value = s -> NewS is S + 1 ; NewS is S ).
+
+
+% expand(+State, +Grid, -Children)
+% Purpose: Generates all valid successor states
+% =========================================================
+expand(state(Pos, Path, Battery, S), Grid, Children) :-
+    Battery > 0,
+    findall(
+        Child,
+        (
+            valid_move(Grid, Pos, NewPos),
+            \+ member(NewPos, Path),
+            update_state(state(Pos, Path, Battery, S), NewPos, Grid, Child)
+        ),
+        Children
+    ).
+
+
+% No expansion if battery is empty
+expand(state(_, _, 0, _), _, []).
+
+
+% GOAL TEST (for greedy)
+goal(state((R,C), _, _, _), Grid) :-
+    get_cell(Grid, R, C, s).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%REMAINING WORK :
+% Member x
+%% BFS SEARCH (OPEN + CLOSED EXPLICIT)
+%% GREEDY SEARCH (OPEN + CLOSED EXPLICIT)
+
+% Member y
+%% OPEN LIST MANAGEMENT
+%% HEURISTIC (maximize survivors)
+%% GREEDY SORT (best score first)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
 %  RUN FUNCTIONS (play with it as you want to test your work)
@@ -144,51 +206,3 @@ run_greedy(ResultPath, Steps, Score) :-
     Steps is Len - 1,
     heuristic(state(_, Path, []), Grid, Score),
     ResultPath = Path.
-
-
-% =========================================================
-% initial_state(+Grid, -State)
-% Purpose: Builds the initial state before search starts
-% =========================================================
-initial_state(Grid, state((R,C), [(R,C)], 100, Survivors)) :-
-    find_robot(Grid, R, C),
-    get_cell(Grid, R, C, Value),
-    ( Value = s -> Survivors is 1 ; Survivors is 0 ).
-
-% =========================================================
-% update_state(+State, +NewPos, +Grid, -NewState)
-% Purpose: Updates state after moving to a new position
-% =========================================================
-update_state(state(_, Path, Battery, S), NewPos, Grid,
-             state(NewPos, NewPath, NewBattery, NewS)) :-
-
-    % Update path
-    append(Path, [NewPos], NewPath),
-
-    % Decrease battery
-    NewBattery is Battery - 10,
-
-    % Check if new cell has a survivor
-    NewPos = (R,C),
-    get_cell(Grid, R, C, Value),
-
-    ( Value = s -> NewS is S + 1 ; NewS is S ).
-
-% =========================================================
-% expand(+State, +Grid, -Children)
-% Purpose: Generates all valid successor states
-% =========================================================
-expand(state(Pos, Path, Battery, S), Grid, Children) :-
-    Battery > 0,
-    findall(
-        Child,
-        (
-            valid_move(Grid, Pos, NewPos),
-            \+ member(NewPos, Path),
-            update_state(state(Pos, Path, Battery, S), NewPos, Grid, Child)
-        ),
-        Children
-    ).
-
-% No expansion if battery is empty
-expand(state(_, _, 0, _), _, []).
