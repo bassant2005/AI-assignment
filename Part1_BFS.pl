@@ -1,18 +1,37 @@
-% Student 1 : Bassant Tarek, ID : 20231037 
-%	work (functions) : find_robot() , get_cell() , within_bounds() 
-%	, valid_cell() , move()
+% Student 1 : Bassant Tarek (20231037)
+%   - find_robot()
+%   - get_cell()
+%   - within_bounds()
+%   - valid_cell()
+%   - move()
 
-%  Student 2 : Mariam Ehab, ID : 20231160 
-%	work (functions) : initial_state() , update_state() , expand()
+% Student 2 : Mariam Ehab (20231160)
+%   - initial_state()
+%   - update_state()
+%   - expand()
 
-% Student 3 : Rawda Raafat Ramadan, ID : 20231067
-%	work (functions) : add_to_open() , heuristic() , greedy_sort(), get_score()
+% Student 3 : Rawda Raafat Ramadan (20231067)
+%   - add_to_open()
+%   - heuristic()
+%   - greedy_sort()
+%   - get_score()
 
-% Student 4 : Rahma Bahgat , ID : 20231056
-%	work (functions) : run_bfs() , run_greedy() , print_result()
-% ---------------------------------------------------------
+% Student 4 : Rahma Bahgat (20231056)
+%   - run_bfs()
+%   - run_greedy()
+%   - print_result()
 
-% Example grid (change for testing)
+
+% =========================================================
+% Purpose:
+%   Represents the environment where the robot moves
+% Symbols:
+%   r → robot start position
+%   e → empty cell
+%   d → debris (blocked)
+%   f → fire (blocked)
+%   s → survivor (goal)
+% =========================================================
 grid([
     [r, e, d, e, e],
     [e, e, f, e, s],
@@ -20,19 +39,30 @@ grid([
     [e, s, e, f, e]
 ]).
 
-% displaying the final output of the search in a readable format.
-% It prints the path step-by-step and shows the total number of steps taken by the robot.
-% =========================================================
 
+% print_path(+Path)
+% Purpose:
+%   Prints the path step-by-step in readable format
+% =========================================================
 print_path([]) :- nl.
+
 print_path([H]) :-
     H = (R,C),
     format('(~w,~w)', [R,C]), nl.
+
 print_path([H|T]) :-
     H = (R,C),
     format('(~w,~w) -> ', [R,C]),
     print_path(T).
 
+
+% print_result(+Path, +Steps, +Battery)
+% Purpose:
+%   Displays final search result including:
+%       - Path
+%       - Number of steps
+%       - Remaining battery
+% =========================================================
 print_result(Path, Steps, Battery) :-
     write('Path found: '),
     print_path(Path), nl,
@@ -40,37 +70,27 @@ print_result(Path, Steps, Battery) :-
     write('Remaining Battery: '), write(Battery), write('%'), nl.
 
 
+% find_robot(+Grid, -Row, -Col)
 % Purpose:
-%   Finds the position of the robot 'r' in the grid.
-% How it works:
-%   - nth1(R, Grid, Row): tries each row
-%   - nth1(C, Row, r): finds column where value = r
-%   - Prolog automatically searches using backtracking
+%   Finds the position of the robot (r)
 % =========================================================
 find_robot(Grid, R, C) :-
     nth1(R, Grid, Row),
     nth1(C, Row, r).
 
 
+% get_cell(+Grid, +Row, +Col, -Value)
 % Purpose:
-%   Retrieves the value of a specific cell in the grid.
-% How it works:
-%   - Gets row R using nth1
-%   - Gets column C from that row
+%   Returns the value stored at a given position
 % =========================================================
 get_cell(Grid, R, C, Value) :-
     nth1(R, Grid, Row),
     nth1(C, Row, Value).
 
 
+% within_bounds(+Grid, +Row, +Col)
 % Purpose:
-%   Ensures that a position is inside the grid boundaries.
-% How it works:
-%   - Finds total number of rows
-%   - Finds total number of columns
-%   - Checks:
-%       1 <= R <= Rows
-%       1 <= C <= Cols
+%   Checks if position is inside grid limits
 % =========================================================
 within_bounds(Grid, R, C) :-
     length(Grid, Rows),
@@ -80,19 +100,12 @@ within_bounds(Grid, R, C) :-
     C >= 1, C =< Cols.
 
 
+% valid_cell(+Grid, +Row, +Col)
 % Purpose:
-%   Checks if a cell is safe for the robot to enter.
+%   Checks if a cell is safe to enter
 % Rules:
-%   - Cannot enter:
-%       d → debris
-%       f → fire
-%   - Can enter:
-%       e → empty
-%       s → survivor
-%       r → starting position
-% How it works:
-%   - Gets the value of the cell
-%   - Ensures it is NOT d and NOT f
+%   - Not debris (d)
+%   - Not fire (f)
 % =========================================================
 valid_cell(Grid, R, C) :-
     get_cell(Grid, R, C, Value),
@@ -100,13 +113,9 @@ valid_cell(Grid, R, C) :-
     Value \= f.
 
 
+% move(+CurrentPos, -NextPos)
 % Purpose:
-%   Generates all possible movements from a position.
-% Allowed movements:
-%   - Up    → (R-1, C)
-%   - Down  → (R+1, C)
-%   - Left  → (R, C-1)
-%   - Right → (R, C+1)
+%   Generates all possible movements (4 directions)
 % =========================================================
 move((R,C), (R1,C)) :- R1 is R - 1. % Up
 move((R,C), (R1,C)) :- R1 is R + 1. % Down
@@ -114,10 +123,9 @@ move((R,C), (R,C1)) :- C1 is C - 1. % Left
 move((R,C), (R,C1)) :- C1 is C + 1. % Right
 
 
+% valid_move(+Grid, +CurrentPos, -NextPos)
 % Purpose:
-%   Produces ONLY valid moves for the robot.
-% Flow:
-%   move → filter by bounds → filter by obstacles
+%   Filters moves to keep only valid ones
 % =========================================================
 valid_move(Grid, (R,C), (R1,C1)) :-
     move((R,C), (R1,C1)),
@@ -126,7 +134,9 @@ valid_move(Grid, (R,C), (R1,C1)) :-
 
 
 % initial_state(+Grid, -State)
-% Purpose: Builds the initial state before search starts
+% Purpose:
+%   Builds the initial state:
+%       Position, Path, Battery, Survivors count
 % =========================================================
 initial_state(Grid, state((R,C), [(R,C)], 100, Survivors)) :-
     find_robot(Grid, R, C),
@@ -135,26 +145,26 @@ initial_state(Grid, state((R,C), [(R,C)], 100, Survivors)) :-
 
 
 % update_state(+State, +NewPos, +Grid, -NewState)
-% Purpose: Updates state after moving to a new position
+% Purpose:
+%   Updates state after movement:
+%       - Extends path
+%       - Decreases battery
+%       - Updates survivors count
 % =========================================================
 update_state(state(_, Path, Battery, S), NewPos, Grid,
              state(NewPos, NewPath, NewBattery, NewS)) :-
 
-    % Update path
     append(Path, [NewPos], NewPath),
-
-    % Decrease battery
     NewBattery is Battery - 10,
 
-    % Check if new cell has a survivor
     NewPos = (R,C),
     get_cell(Grid, R, C, Value),
-
     ( Value = s -> NewS is S + 1 ; NewS is S ).
 
 
 % expand(+State, +Grid, -Children)
-% Purpose: Generates all valid successor states
+% Purpose:
+%   Generates all valid next states
 % =========================================================
 expand(state(Pos, Path, Battery, S), Grid, Children) :-
     Battery > 0,
@@ -168,110 +178,67 @@ expand(state(Pos, Path, Battery, S), Grid, Children) :-
         Children
     ).
 
-
 % No expansion if battery is empty
 expand(state(_, _, 0, _), _, []).
 
 
-% Goal for BFS: reach a survivor
+% goal(+State, +Grid)
+% Purpose:
+%   Checks if robot reached a survivor
+% =========================================================
 goal(state((R,C), _, _, _), Grid) :-
     get_cell(Grid, R, C, s).
 
 
+% add_to_open(+Strategy, +Children, +Open, -NewOpen)
 % Purpose:
-%   Manages how states are added to the OPEN list.
-% Behavior:
-%   - BFS → acts like a queue (FIFO)
+%   Adds new states depending on strategy
+%   BFS → FIFO queue
 % =========================================================
 add_to_open(bfs, Children, Open, NewOpen) :-
     append(Open, Children, NewOpen).
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%REMAINING WORK :
-% Member x
-%% BFS SEARCH (OPEN + CLOSED EXPLICIT)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Purpose:
-%   Main search engine for BFS.
-%   It uses:
-%       - OPEN list → states to be explored
-%       - CLOSED list → visited positions (to avoid loops)
-% How it works:
-%   - Repeatedly takes the first state from OPEN
-%   - Checks if it is the goal
-%   - Otherwise expands it and continues searching
-% =========================================================
-
-% Case 1:
-%   If OPEN list is empty → no solution exists
+% Case 1: No solution
 search([], _, _, _, _) :-
     write('No path found'), nl, fail.
 
 
-% Case 2:
-%   If the current state is the goal → stop search
-% How it works:
-%   - Takes the first element in OPEN
-%   - Checks goal condition
-%   - Returns it as the solution
-% =========================================================
+% Case 2: Goal reached
 search([Current | _], _, bfs, Grid, Current) :-
     goal(Current, Grid), !.
 
 
-% Case 3:
-%   Skip already visited positions
-% Why:
-%   - Prevents infinite loops
-%   - Avoids revisiting same cell
-% How it works:
-%   - Extract position from state
-%   - If already in CLOSED → ignore it
-%   - Continue with rest of OPEN
-% =========================================================
+% Case 3: Skip visited nodes
 search([Current | RestOpen], Closed, Strategy, Grid, Solution) :-
     Current = state(Pos, _, _, _),
     member(Pos, Closed),
     search(RestOpen, Closed, Strategy, Grid, Solution).
 
 
-% Case 4:
-%   Expand current state and continue search
-% How it works:
-%   1. Extract current position
-%   2. Ensure it is not visited before
-%   3. Generate children using expand/3
-%   4. Add children to OPEN (FIFO for BFS)
-%   5. Add current position to CLOSED
-%   6. Continue searching recursively
-% =========================================================
+% Case 4: Expand and continue search
 search([Current | RestOpen], Closed, Strategy, Grid, Solution) :-
     Current = state(Pos, _, _, _),
     \+ member(Pos, Closed),
 
-    % Generate next possible states
     expand(Current, Grid, Children),
-
-    % Add children to OPEN list based on strategy
     add_to_open(Strategy, Children, RestOpen, NewOpen),
 
-    % Continue search with updated OPEN and CLOSED
     search(NewOpen, [Pos | Closed], Strategy, Grid, Solution).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%  RUN FUNCTIONS (play with it as you want to test your work)
+% run_bfs(-Path, -Steps)
+% Purpose:
+%   Executes BFS and prints result
 % =========================================================
-% PART 1 (BFS - nearest survivor)
-% Fixed: extracts Battery from final state and passes it to print_result
 run_bfs(ResultPath, Steps) :-
     grid(Grid),
     initial_state(Grid, S),
+
     search([S], [], bfs, Grid, state(_, Path, Battery, _)),
+
     length(Path, Len),
     Steps is Len - 1,
     ResultPath = Path,
+
     print_result(Path, Steps, Battery), !.
