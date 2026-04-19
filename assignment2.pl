@@ -5,11 +5,11 @@
 %  Student 2 : Mariam Ehab, ID : 20231160 
 %	work (functions) : initial_state() , update_state() , expand()
 
-% Student 3 :  , ID :  
-%	work (functions) : 
+% Student 3 : Rawda Raafat Ramadan, ID : 20231067
+%	work (functions) : add_to_open() , heuristic() , greedy_sort(), get_score()
 
-% Student 4 :  , ID :  
-%	work (functions) : 
+% Student 4 :  , ID :
+%	work (functions) :
 % ---------------------------------------------------------
 
 % Example grid (change for testing)
@@ -171,20 +171,59 @@ expand(state(_, _, 0, _), _, []).
 goal(state((R,C), _, _, _), Grid) :-
     get_cell(Grid, R, C, s).
 
+% Purpose:
+%   Manages how states are added to the OPEN list.
+% Behavior:
+%   - BFS → acts like a queue (FIFO)
+%   - Greedy → sorts states based on heuristic value
+% =========================================================
+add_to_open(bfs, Children, Open, NewOpen) :-
+    append(Open, Children, NewOpen).
+
+add_to_open(greedy, Children, Open, NewOpen) :-
+    append(Open, Children, TempOpen),
+    greedy_sort(TempOpen, NewOpen).
+
+% Purpose:
+%   Calculates the heuristic value of a state.
+% Goal:
+%   Maximize number of rescued survivors.
+% How it works:
+%   - Extracts Survivors from the state
+%   - Higher value = better state
+% =========================================================
+heuristic(state(_, _, _, Survivors), _, Score) :-
+    Score is Survivors.
+
+% Purpose:
+%   Sorts the OPEN list based on heuristic values.
+% Behavior:
+%   - States with higher heuristic (more survivors)
+%     are placed first.
+% How it works:
+%   - Convert states to (Score-State) pairs
+%   - Sort ascending using keysort
+%   - Reverse to get descending order
+% =========================================================
+greedy_sort(Open, Sorted) :-
+    map_list_to_pairs(get_score, Open, Pairs),
+    keysort(Pairs, SortedPairsAsc),
+    reverse(SortedPairsAsc, SortedPairsDesc),
+    pairs_values(SortedPairsDesc, Sorted).
+
+% Purpose:
+%   Helper predicate to extract heuristic score
+%   for sorting.
+% =========================================================
+get_score(State, Score) :-
+    heuristic(State, _, Score).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %REMAINING WORK :
 % Member x
 %% BFS SEARCH (OPEN + CLOSED EXPLICIT)
 %% GREEDY SEARCH (OPEN + CLOSED EXPLICIT)
-
-% Member y
-%% OPEN LIST MANAGEMENT
-%% HEURISTIC (maximize survivors)
-%% GREEDY SORT (best score first)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 
 %  RUN FUNCTIONS (play with it as you want to test your work)
 % =========================================================
