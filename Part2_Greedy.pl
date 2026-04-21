@@ -6,22 +6,41 @@
 %	work (functions) : initial_state() , update_state() , expand()
 
 % Student 3 : Rawda Raafat Ramadan, ID : 20231067
-%	work (functions) : add_to_open() , heuristic() , greedy_sort(), get_score()
+%	work (functions) : add_to_open() , heuristic() , greedy_sort()
+%	, get_score()
 
 % Student 4 : Rahma Bahgat , ID : 20231056
-%	work (functions) : run_bfs() , run_greedy() , print_result()
+%	work (functions) : run_greedy() , print_result()
 % ---------------------------------------------------------
 
 % Example grid (change for testing)
-grid([
-    [r, e, d, e, e],
-    [e, e, f, e, s],
-    [d, e, e, e, e],
-    [e, s, e, f, e]
-]).
+% there is a solution
+%grid([
+ %   [r, e, s],
+%	[d, f, e],
+%[e, s, e]
+%]).
+
+% grid([
+% 	[r, e, d, e, e],
+%	[e, e, f, e, s],
+%	[d, e, e, e, d],
+%	[e, s, e, f, s]
+%]).
+
+% battery test
+ grid([
+     [r, e, e, e, e],
+     [e, d, d, d, e],
+     [e, d, s, d, e],
+     [e, d, d, d, e],
+     [e, e, e, e, e]
+ ]).
+
 
 % displaying the final output of the search in a readable format.
-% It prints the path step-by-step and shows the total number of steps taken by the robot.
+% It prints the path step-by-step and shows the total number of 
+% steps taken by the robot.
 % =========================================================
 print_path([]) :- nl.
 print_path([H]) :-
@@ -41,10 +60,6 @@ print_result(Path, Steps, Score, survivors) :-
 
 % Purpose:
 %   Finds the position of the robot 'r' in the grid.
-% How it works:
-%   - nth1(R, Grid, Row): tries each row
-%   - nth1(C, Row, r): finds column where value = r
-%   - Prolog automatically searches using backtracking
 % =========================================================
 find_robot(Grid, R, C) :-
     nth1(R, Grid, Row),
@@ -53,9 +68,6 @@ find_robot(Grid, R, C) :-
 
 % Purpose:
 %   Retrieves the value of a specific cell in the grid.
-% How it works:
-%   - Gets row R using nth1
-%   - Gets column C from that row
 % =========================================================
 get_cell(Grid, R, C, Value) :-
     nth1(R, Grid, Row),
@@ -64,12 +76,6 @@ get_cell(Grid, R, C, Value) :-
 
 % Purpose:
 %   Ensures that a position is inside the grid boundaries.
-% How it works:
-%   - Finds total number of rows
-%   - Finds total number of columns
-%   - Checks:
-%       1 <= R <= Rows
-%       1 <= C <= Cols
 % =========================================================
 within_bounds(Grid, R, C) :-
     length(Grid, Rows),
@@ -81,17 +87,6 @@ within_bounds(Grid, R, C) :-
 
 % Purpose:
 %   Checks if a cell is safe for the robot to enter.
-% Rules:
-%   - Cannot enter:
-%       d → debris
-%       f → fire
-%   - Can enter:
-%       e → empty
-%       s → survivor
-%       r → starting position
-% How it works:
-%   - Gets the value of the cell
-%   - Ensures it is NOT d and NOT f
 % =========================================================
 valid_cell(Grid, R, C) :-
     get_cell(Grid, R, C, Value),
@@ -101,22 +96,15 @@ valid_cell(Grid, R, C) :-
 
 % Purpose:
 %   Generates all possible movements from a position.
-% Allowed movements:
-%   - Up    → (R-1, C)
-%   - Down  → (R+1, C)
-%   - Left  → (R, C-1)
-%   - Right → (R, C+1)
 % =========================================================
-move((R,C), (R1,C)) :- R1 is R - 1. % Up
-move((R,C), (R1,C)) :- R1 is R + 1. % Down
-move((R,C), (R,C1)) :- C1 is C - 1. % Left
-move((R,C), (R,C1)) :- C1 is C + 1. % Right
+move((R,C), (R1,C)) :- R1 is R - 1.
+move((R,C), (R1,C)) :- R1 is R + 1.
+move((R,C), (R,C1)) :- C1 is C - 1.
+move((R,C), (R,C1)) :- C1 is C + 1.
 
 
 % Purpose:
 %   Produces ONLY valid moves for the robot.
-% Flow:
-%   move → filter by bounds → filter by obstacles
 % =========================================================
 valid_move(Grid, (R,C), (R1,C1)) :-
     move((R,C), (R1,C1)),
@@ -124,8 +112,8 @@ valid_move(Grid, (R,C), (R1,C1)) :-
     valid_cell(Grid, R1, C1).
 
 
-% initial_state(+Grid, -State)
-% Purpose: Builds the initial state before search starts
+% Purpose:
+%   Builds the initial state
 % =========================================================
 initial_state(Grid, state((R,C), [(R,C)], 100, Survivors)) :-
     find_robot(Grid, R, C),
@@ -133,27 +121,22 @@ initial_state(Grid, state((R,C), [(R,C)], 100, Survivors)) :-
     ( Value = s -> Survivors is 1 ; Survivors is 0 ).
 
 
-% update_state(+State, +NewPos, +Grid, -NewState)
-% Purpose: Updates state after moving to a new position
+% Purpose:
+%   Updates state after movement
 % =========================================================
 update_state(state(_, Path, Battery, S), NewPos, Grid,
              state(NewPos, NewPath, NewBattery, NewS)) :-
 
-    % Update path
     append(Path, [NewPos], NewPath),
-
-    % Decrease battery
     NewBattery is Battery - 10,
 
-    % Check if new cell has a survivor
     NewPos = (R,C),
     get_cell(Grid, R, C, Value),
-
     ( Value = s -> NewS is S + 1 ; NewS is S ).
 
 
-% expand(+State, +Grid, -Children)
-% Purpose: Generates all valid successor states
+% Purpose:
+%   Generates all valid successor states
 % =========================================================
 expand(state(Pos, Path, Battery, S), Grid, Children) :-
     Battery > 0,
@@ -167,142 +150,87 @@ expand(state(Pos, Path, Battery, S), Grid, Children) :-
         Children
     ).
 
-
-% No expansion if battery is empty
 expand(state(_, _, 0, _), _, []).
 
 
-% For greedy: we don't stop early → handled in search
-
-
 % Purpose:
-%   Manages how states are added to the OPEN list.
-% Behavior:
-%   - Greedy → sorts states based on heuristic value
+%   Adds states to OPEN (Greedy)
 % =========================================================
 add_to_open(greedy, Children, Open, NewOpen) :-
     append(Open, Children, TempOpen),
     greedy_sort(TempOpen, NewOpen).
 
+
 % Purpose:
-%   Calculates the heuristic value of a state.
-% Goal:
-%   Maximize number of rescued survivors.
-% How it works:
-%   - Extracts Survivors from the state
-%   - Higher value = better state
+%   Heuristic = number of survivors collected
 % =========================================================
 heuristic(state(_, _, _, Survivors), _, Score) :-
     Score is Survivors.
 
+
 % Purpose:
-%   Sorts the OPEN list based on heuristic values.
-% Behavior:
-%   - States with higher heuristic (more survivors)
-%     are placed first.
-% How it works:
-%   - Convert states to (Score-State) pairs
-%   - Sort ascending using keysort
-%   - Reverse to get descending order
+%   Sort OPEN descending by heuristic
 % =========================================================
 greedy_sort(Open, Sorted) :-
     map_list_to_pairs(get_score, Open, Pairs),
-    keysort(Pairs, SortedPairsAsc),
-    reverse(SortedPairsAsc, SortedPairsDesc),
-    pairs_values(SortedPairsDesc, Sorted).
+    keysort(Pairs, SortedAsc),
+    reverse(SortedAsc, SortedDesc),
+    pairs_values(SortedDesc, Sorted).
+
 
 % Purpose:
-%   Helper predicate to extract heuristic score
-%   for sorting.
+%   Extract heuristic score
 % =========================================================
 get_score(State, Score) :-
     heuristic(State, _, Score).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%REMAINING WORK :
-% Member x
-%% GREEDY SEARCH (OPEN + CLOSED EXPLICIT)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% Purpose:
-%   Main search engine for Greedy search.
-%   It uses:
-%       - OPEN list → states to be explored
-%       - CLOSED list → visited positions (to avoid loops)
-% How it works:
-%   - Repeatedly takes the first state from OPEN
-%   - Checks if it is the goal
-%   - Otherwise expands it and continues searching
+% GREEDY SEARCH (OPEN + CLOSED EXPLICIT)
 % =========================================================
 
 % Case 1:
-%   If OPEN list is empty → no solution exists
-search([], _, _, _, _) :-
-    write('No path found'), nl, fail.
-
+%   If OPEN list is empty → return best solution found
+search([], _, _, _, Best, Best).
 
 % Case 2:
-%   If current state has no children → return it as the solution
-% =========================================================
-search([Current | _], Closed, greedy, Grid, Current) :-
-    Current = state(Pos, _, _, _),
-    \+ member(Pos, Closed),
-    expand(Current, Grid, []), !.
-
+%   Skip states with no battery
+search([Current | RestOpen], Closed, Strategy, Grid, BestSoFar, Solution) :-
+    Current = state(_, _, Battery, _),
+    Battery =< 0,
+    search(RestOpen, Closed, Strategy, Grid, BestSoFar, Solution).
 
 % Case 3:
 %   Skip already visited positions
-% Why:
-%   - Prevents infinite loops
-%   - Avoids revisiting same cell
-% How it works:
-%   - Extract position from state
-%   - If already in CLOSED → ignore it
-%   - Continue with rest of OPEN
-% =========================================================
-search([Current | RestOpen], Closed, Strategy, Grid, Solution) :-
+search([Current | RestOpen], Closed, Strategy, Grid, BestSoFar, Solution) :-
     Current = state(Pos, _, _, _),
     member(Pos, Closed),
-    search(RestOpen, Closed, Strategy, Grid, Solution).
-
+    search(RestOpen, Closed, Strategy, Grid, BestSoFar, Solution).
 
 % Case 4:
-%   Expand current state and continue search
-% How it works:
-%   1. Extract current position
-%   2. Ensure it is not visited before
-%   3. Generate children using expand/3
-%   4. Add children to OPEN sorted by heuristic
-%   5. Add current position to CLOSED
-%   6. Continue searching recursively
-% =========================================================
-search([Current | RestOpen], Closed, Strategy, Grid, Solution) :-
-    Current = state(Pos, _, _, _),
+%   Update BEST solution if current is better
+search([Current | RestOpen], Closed, Strategy, Grid, BestSoFar, Solution) :-
+    Current = state(Pos, _, Battery, S1),
+    BestSoFar = state(_, _, _, S2),
+
+    ( S1 > S2 -> NewBest = Current ; NewBest = BestSoFar ),
+
+    Battery > 0,
     \+ member(Pos, Closed),
 
-    % Generate next possible states
     expand(Current, Grid, Children),
-
-    % Add children to OPEN list based on strategy
     add_to_open(Strategy, Children, RestOpen, NewOpen),
 
-    % Continue search with updated OPEN and CLOSED
-    search(NewOpen, [Pos | Closed], Strategy, Grid, Solution).
+    search(NewOpen, [Pos | Closed], Strategy, Grid, NewBest, Solution).
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%  RUN FUNCTIONS (play with it as you want to test your work)
-% =========================================================
 % PART 2 (GREEDY - max survivors)
-% Fixed: greedy terminates at dead-end states (no children),
-%        extracts Score directly from the final state,
-%        and prints survivors correctly
-run_greedy(ResultPath, Steps, Score) :-
+run_greedy(Steps, Score) :-
     grid(Grid),
-    initial_state(Grid, S),
-    search([S], [], greedy, Grid, state(_, Path, _, Score)),
+    initial_state(Grid, Initial),
+
+    % initial best = initial state
+    search([Initial], [], greedy, Grid, Initial, state(_, Path, _, Score)),
+
     length(Path, Len),
     Steps is Len - 1,
-    ResultPath = Path,
     print_result(Path, Steps, Score, survivors), !.
