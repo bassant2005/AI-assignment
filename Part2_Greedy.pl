@@ -13,13 +13,12 @@
 %	work (functions) : run_greedy() , print_result()
 % ---------------------------------------------------------
 
-% Example grid (change for testing)
-% there is a solution
-%grid([
- %   [r, e, s],
-%	[d, f, e],
-%[e, s, e]
-%]).
+
+grid([
+   [r, e, s],
+  	[d, f, e],
+   [e, s, e]
+]).
 
 % grid([
 % 	[r, e, d, e, e],
@@ -29,13 +28,13 @@
 %]).
 
 % battery test
- grid([
-     [r, e, e, e, e],
-     [e, d, d, d, e],
-     [e, d, s, d, e],
-     [e, d, d, d, e],
-     [e, e, e, e, e]
- ]).
+%grid([
+%     [r, e, e, e, e],
+%     [e, d, d, d, e],
+%     [e, d, s, d, e],
+%     [e, d, d, d, e],
+%     [e, e, e, e, e]
+% ]).
 
 
 % displaying the final output of the search in a readable format.
