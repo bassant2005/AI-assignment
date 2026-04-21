@@ -1,43 +1,41 @@
-% Student 1 : Bassant Tarek (20231037)
-%   - find_robot()
-%   - get_cell()
-%   - within_bounds()
-%   - valid_cell()
-%   - move()
+% Student 1 : Bassant Tarek, ID : 20231037 
+%	work (functions) : find_robot() , get_cell() , within_bounds() 
+%	, valid_cell() , move()
 
-% Student 2 : Mariam Ehab (20231160)
-%   - initial_state()
-%   - update_state()
-%   - expand()
+%  Student 2 : Mariam Ehab, ID : 20231160 
+%	work (functions) : initial_state() , update_state() , expand()
 
-% Student 3 : Rawda Raafat Ramadan (20231067)
-%   - add_to_open()
-%   - heuristic()
-%   - greedy_sort()
-%   - get_score()
+% Student 3 : Rawda Raafat Ramadan, ID : 20231067
+%	work (functions) : add_to_open() , heuristic() , greedy_sort()
+%	, get_score()
 
-% Student 4 : Rahma Bahgat (20231056)
-%   - run_bfs()
-%   - run_greedy()
-%   - print_result()
+% Student 4 : Rahma Bahgat , ID : 20231056
+%	work (functions) : run_greedy() , print_result()
+% ---------------------------------------------------------
 
-
-% =========================================================
-% Purpose:
-%   Represents the environment where the robot moves
-% Symbols:
-%   r → robot start position
-%   e → empty cell
-%   d → debris (blocked)
-%   f → fire (blocked)
-%   s → survivor (goal)
-% =========================================================
+% Example grid (change for testing)
+% there is a solution
 grid([
-    [r, e, d, e, e],
-    [e, e, f, e, s],
-    [d, e, e, e, e],
-    [e, s, e, f, e]
+    [r, e, s],
+	[d, f, e],
+	[e, s, e]
 ]).
+
+% grid([
+% 	[r, e, d, e, e],
+%	[e, e, f, e, s],
+%	[d, e, e, e, d],
+%	[e, s, e, f, s]
+%]).
+
+% battery test
+%grid([
+%     [r, e, e, e, e],
+%     [e, d, d, d, e],
+%     [e, d, s, d, e],
+%     [e, d, d, d, e],
+%     [e, e, e, e, e]
+% ]).
 
 
 % print_path(+Path)
@@ -231,14 +229,10 @@ search([Current | RestOpen], Closed, Strategy, Grid, Solution) :-
 % Purpose:
 %   Executes BFS and prints result
 % =========================================================
-run_bfs(ResultPath, Steps) :-
+run_bfs(Steps) :-
     grid(Grid),
     initial_state(Grid, S),
-
     search([S], [], bfs, Grid, state(_, Path, Battery, _)),
-
     length(Path, Len),
     Steps is Len - 1,
-    ResultPath = Path,
-
     print_result(Path, Steps, Battery), !.
