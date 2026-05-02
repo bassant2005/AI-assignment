@@ -365,10 +365,9 @@ def apply_capture(board, r2, c2, current_player):
         enemies = [DEFENDER, KING]
         friendlies = [ATTACKER]
     else:
-        # Note: King is 'unarmed' per rules, but Defenders can use the King
-        # as an anchor to capture an Attacker.
+        # Note: King is 'unarmed' per rules and cannot assist in capturing.
         enemies = [ATTACKER]
-        friendlies = [DEFENDER, KING]
+        friendlies = [DEFENDER]
 
     center = BOARD_SIZE // 2
     throne = (center, center)
@@ -479,6 +478,126 @@ def evaluate_board(board):
 ############################################################
 """
 ================================================================================
+MEMBER 2: THE STRATEGIST (AI Engine & Alpha-Beta)
+================================================================================
+1. CORE ENGINE (`alpha_beta`):
+   - Implement the recursive Alpha-Beta function.
+   - Must return a tuple of (best_score, best_move).
+
+2. MOVE SIMULATION:
+   - Ensure the AI uses `apply_move` (which creates board copies) to test future 
+     scenarios without corrupting the live game state.
+
+3. DIFFICULTY CONTROLLER:
+   - Create a function to handle search depth based on user selection:
+     - Easy (Depth 1), Medium (Depth 3), Hard (Depth 5).
+================================================================================
+"""
+
+############################################################
+"""
+Alpha-Beta Pruning Algorithm
+Returns: (best_score, best_move)
+- best_score: evaluation score from current player's perspective
+- best_move: tuple (r1, c1, r2, c2) representing the best move
+"""
+def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player):
+    # Check for terminal states or depth limit
+    winner = is_winner(board)
+    if winner is not None or depth == 0:
+        return evaluate_board(board), None
+    
+    # Get all legal moves for the current player
+    moves = get_all_moves(board, current_player)
+    
+    # If no moves available, evaluate current position
+    if not moves:
+        return evaluate_board(board), None
+    
+    best_move = None
+    
+    if maximizing_player:
+        max_eval = float('-inf')
+        for move in moves:
+            # Apply move and capture
+            new_board = apply_move(board, move)
+            new_board = apply_capture(new_board, move[2], move[3], current_player)
+            
+            # Switch player for next turn
+            next_player = DEFENDER if current_player == ATTACKER else ATTACKER
+            
+            # Recursive call with switched roles
+            eval_score, _ = alpha_beta(new_board, depth - 1, alpha, beta, False, next_player)
+            
+            if eval_score > max_eval:
+                max_eval = eval_score
+                best_move = move
+            
+            alpha = max(alpha, eval_score)
+            if beta <= alpha:
+                break  # Beta cutoff
+        return max_eval, best_move
+    else:
+        min_eval = float('inf')
+        for move in moves:
+            # Apply move and capture
+            new_board = apply_move(board, move)
+            new_board = apply_capture(new_board, move[2], move[3], current_player)
+            
+            # Switch player for next turn
+            next_player = DEFENDER if current_player == ATTACKER else ATTACKER
+            
+            # Recursive call with switched roles
+            eval_score, _ = alpha_beta(new_board, depth - 1, alpha, beta, True, next_player)
+            
+            if eval_score < min_eval:
+                min_eval = eval_score
+                best_move = move
+            
+            beta = min(beta, eval_score)
+            if beta <= alpha:
+                break  # Alpha cutoff
+        return min_eval, best_move
+
+############################################################
+"""
+Difficulty Controller
+Returns search depth based on difficulty level
+"""
+def get_difficulty_depth(difficulty):
+    if difficulty == "easy":
+        return 1
+    elif difficulty == "medium":
+        return 3
+    elif difficulty == "hard":
+        return 5
+    else:
+        return 3  # Default to medium
+
+############################################################
+"""
+AI Move Selection Function
+Returns the best move for the AI player based on difficulty level
+"""
+def get_ai_move(board, ai_player, difficulty="medium"):
+    depth = get_difficulty_depth(difficulty)
+    
+    # Determine if AI is maximizing or minimizing
+    # Defenders want positive scores, Attackers want negative scores
+    maximizing = (ai_player == DEFENDER)
+    
+    # Initial alpha-beta values
+    alpha = float('-inf')
+    beta = float('inf')
+    
+    # Get best move using alpha-beta
+    best_score, best_move = alpha_beta(board, depth, alpha, beta, maximizing, ai_player)
+    
+    return best_move
+
+############################################################
+"""
+================================================================================
 MEMBER 1: THE RULE MASTER (Logic, Evaluation & Rules)
 ================================================================================
 1. PATH VALIDATION (`is_valid_move`):
@@ -494,21 +613,6 @@ MEMBER 1: THE RULE MASTER (Logic, Evaluation & Rules)
 3. WIN CONDITION REFINEMENT (`is_winner`):
    - Update King capture logic: 4 attackers needed in the center, 3 on the edge, 
      and 2 if the King is against a corner.
-
-================================================================================
-MEMBER 2: THE STRATEGIST (AI Engine & Alpha-Beta)
-================================================================================
-1. CORE ENGINE (`alpha_beta`):
-   - Implement the recursive Alpha-Beta function.
-   - Must return a tuple of (best_score, best_move).
-
-2. MOVE SIMULATION:
-   - Ensure the AI uses `apply_move` (which creates board copies) to test future 
-     scenarios without corrupting the live game state.
-
-3. DIFFICULTY CONTROLLER:
-   - Create a function to handle search depth based on user selection:
-     - Easy (Depth 1), Medium (Depth 3), Hard (Depth 5).
 
 ================================================================================
 MEMBER 3: THE ARCHITECT (GUI & Game Controller)
