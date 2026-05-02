@@ -32,6 +32,7 @@ DEFENDER = 'D'
 ATTACKER = 'A'
 BOARD_SIZE = 11
 CORNERS = [(0,0), (0,10), (10,0), (10,10)]
+THRONE = (BOARD_SIZE // 2, BOARD_SIZE // 2)   # ← ADDED: (5,5) center square
 
 ############################################################
 """
@@ -102,6 +103,27 @@ def within_bounds(r, c):
     return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
 
 ############################################################
+# ═══ ADDED by Person 3 ════════════════════════════════════
+"""
+Helper: returns True if the piece belongs to the given player.
+Defenders 'own' both DEFENDER pieces AND the KING.
+This is used everywhere we need to check piece ownership.
+"""
+def belongs_to(piece, player):
+    if player == ATTACKER:
+        return piece == ATTACKER
+    return piece in (DEFENDER, KING)   # DEFENDER side owns the King too
+
+############################################################
+# ═══ ADDED by Person 3 ════════════════════════════════════
+"""
+Helper: returns True if (r, c) is the central Throne square.
+Used by is_valid_move (restricted landing) and apply_capture (anchor rule).
+"""
+def is_throne(r, c):
+    return (r, c) == THRONE
+
+############################################################
 """
 Generates all possible legal moves for a player.
 
@@ -109,6 +131,10 @@ MOVEMENT RULES:
 - rook-like movement (horizontal / vertical only)
 - can move multiple empty cells
 - cannot jump over pieces
+
+FIXED by Person 1:
+- uses belongs_to() so the King is included for the DEFENDER player
+- calls is_valid_move() (with player) to respect all refined rules
 """
 def get_all_moves(board, player):
     moves = []
@@ -120,20 +146,23 @@ def get_all_moves(board, player):
         for c in range(BOARD_SIZE):
 
             # skip cells that do NOT belong to current player
-            if board[r][c] != player:
+            if not belongs_to(board[r][c], player):   # ← FIXED: King included for DEFENDER
                 continue
 
             # try moving in all 4 directions
             for dr, dc in directions:
                 nr, nc = r + dr, c + dc
 
-                # keep moving while:
-                # - inside board
-                # - cell is empty (no blocking piece)
+                # keep moving while inside board and cell is empty
                 while within_bounds(nr, nc) and board[nr][nc] == EMPTY:
 
-                    # add move: (start_row, start_col, end_row, end_col)
-                    moves.append((r, c, nr, nc))
+                    # validate before adding (catches throne/corner restriction)
+                    if is_valid_move(board, r, c, nr, nc, player):
+                        moves.append((r, c, nr, nc))
+
+                    # Non-king pieces cannot pass through restricted squares
+                    if board[r][c] != KING and (is_throne(nr, nc) or is_corner(nr, nc)):
+                        break
 
                     # continue sliding further in same direction
                     nr += dr
@@ -142,10 +171,46 @@ def get_all_moves(board, player):
     return moves
 
 ############################################################
+# ═══ ADDED by Person 3 ════════════════════════════════════
+"""
+Returns all legal destination squares (r2, c2) for the piece at (r, c).
+Used by the GUI to highlight valid moves when a piece is selected.
+Returns a list of (row, col) tuples, or [] if wrong player.
+"""
+def get_piece_moves(board, r, c, player):
+    piece = board[r][c]
+    if not belongs_to(piece, player):
+        return []   # wrong player clicked this piece
+
+    destinations = []
+    directions = [(1,0), (-1,0), (0,1), (0,-1)]
+    for dr, dc in directions:
+        nr, nc = r + dr, c + dc
+        while within_bounds(nr, nc) and board[nr][nc] == EMPTY:
+            if is_valid_move(board, r, c, nr, nc, player):
+                destinations.append((nr, nc))
+            # Non-king pieces stop sliding at restricted squares
+            if piece != KING and (is_throne(nr, nc) or is_corner(nr, nc)):
+                break
+            nr += dr
+            nc += dc
+    return destinations
+
+############################################################
 """
 Checks if a move is legal according to basic rules.
+
+REFINED by Person 1:
+  - Added current_player parameter: piece must belong to the current player.
+  - Only the KING may land on the Throne or a Corner square.
 """
-def is_valid_move(board, r1, c1, r2, c2):
+def is_valid_move(board, r1, c1, r2, c2, current_player):   # ← ADDED: current_player
+
+    # ── ADDED: correct player must own the piece ──────────────
+    piece = board[r1][c1]
+    if not belongs_to(piece, current_player):
+        return False
+
     # 1. check if destination is inside board boundaries
     if not within_bounds(r2, c2):
         return False
@@ -169,6 +234,11 @@ def is_valid_move(board, r1, c1, r2, c2):
             return False  # piece is blocking the path
         nr += dr
         nc += dc
+
+    # ── ADDED: only the King may stop on the Throne or a Corner ─
+    if piece != KING:
+        if is_throne(r2, c2) or is_corner(r2, c2):
+            return False
 
     return True
 
@@ -196,7 +266,7 @@ def apply_move(board, move):
 
 ############################################################
 """
-Prints board in readable
+Prints board in readable format.
 """
 def print_board(board):
     for row in board:
@@ -222,6 +292,10 @@ def is_corner(r,c):
 ############################################################
 """
 This function checks if the game has ended and determines which side has won.
+
+REFINED by Person 3:
+  - Added Case 4: King adjacent (1 step) to a corner only needs
+    2 attacker-sides blocked (2 walls already box it in).
 """
 def is_winner(board):
     king_pos = find_king(board)
@@ -264,6 +338,13 @@ def is_winner(board):
     if (kr, kc) in [(0,0), (0,10), (10,0), (10,10)]:
         if surrounded >= 2:
             return "ATTACKER"
+
+    # ── ADDED (Person 1): CASE 4 — King one step from a corner ──
+    # Two board walls already block 2 sides → only 2 attackers needed.
+    for cr, cc in CORNERS:
+        if abs(kr - cr) + abs(kc - cc) == 1:   # Manhattan distance = 1
+            if surrounded >= 2:
+                return "ATTACKER"
 
     return None
 
@@ -331,10 +412,12 @@ def apply_capture(board, r2, c2, current_player):
       negative  → good for Attacker
 
     Scoring breakdown:
-      Material    : +10 per Defender alive, -10 per Attacker alive
-      King Safety : +500 if King is on a corner (defenders win)
-                    -50  for each Attacker adjacent to the King
-      King Mobility: +5  for each legal move the King can make
+      Material     : +10 per Defender alive,   -10 per Attacker alive
+      King Safety  : +500 if King is on corner (defenders win)
+                     -50  for each Attacker adjacent to the King
+      King Mobility: +5   for each legal move the King can make
+      Corner Prox  : +30 / +10 bonus if King is close to a corner  ← ADDED
+      Cohesion     : +3  per Defender within 3 steps of the King    ← ADDED
     """
 def evaluate_board(board):
     score = 0
@@ -357,7 +440,7 @@ def evaluate_board(board):
     # ── KING SAFETY ───────────────────────────────────────────────
     # Big bonus if King has already reached a corner
     if is_corner(kr, kc):
-        score += 500
+        return 9999   # ← CHANGED: return immediately (terminal win state)
 
     # Penalty for each Attacker directly adjacent to the King
     for dr, dc in [(1,0), (-1,0), (0,1), (0,-1)]:
@@ -373,6 +456,23 @@ def evaluate_board(board):
             score += 5
             nr += dr
             nc += dc
+
+    # ── ADDED: CORNER PROXIMITY ───────────────────────────────────
+    # Reward Defender when King is close to an escape corner
+    min_corner_dist = min(abs(kr - cr) + abs(kc - cc) for cr, cc in CORNERS)
+    if min_corner_dist <= 2:
+        score += 30
+    elif min_corner_dist <= 4:
+        score += 10
+
+    # ── ADDED: DEFENDER COHESION ──────────────────────────────────
+    # Small bonus for keeping Defenders near the King (protective formation)
+    for r in range(BOARD_SIZE):
+        for c in range(BOARD_SIZE):
+            if board[r][c] == DEFENDER:
+                dist = abs(r - kr) + abs(c - kc)
+                if dist <= 3:
+                    score += 3
 
     return score
 
