@@ -49,51 +49,80 @@ def game_loop():
     board = initial_state()
     current_player = ATTACKER  # Attackers move first
     
-    # Game mode selection - Human vs Computer only
-    print("\nSelect your side:")
-    print("1. Play as Attackers (you move first)")
-    print("2. Play as Defenders (AI moves first)")
+    # Game mode selection
+    print("\nSelect game mode:")
+    print("1. Human vs Human")
+    print("2. Human vs Computer")
     
     while True:
         try:
-            side = int(input("Choose side (1-2): "))
-            if side == 1:
-                human_player = ATTACKER
-                ai_player = DEFENDER
+            mode = int(input("Choose mode (1-2): "))
+            if mode == 1:
+                human_vs_human = True
                 break
-            elif side == 2:
-                human_player = DEFENDER
-                ai_player = ATTACKER
+            elif mode == 2:
+                human_vs_human = False
                 break
             else:
                 print("Please enter 1 or 2.")
         except ValueError:
             print("Please enter a number.")
     
-    # AI difficulty selection
-    print("\nSelect AI difficulty:")
-    print("1. Easy")
-    print("2. Medium") 
-    print("3. Hard")
+    if human_vs_human:
+        print("\nHuman vs Human mode selected!")
+        print("Attackers move first.")
+        human_player = None  # Not used in HvH
+        ai_player = None     # Not used in HvH
+        ai_difficulty = None # Not used in HvH
+    else:
+        # Human vs Computer setup
+        print("\nSelect your side:")
+        print("1. Play as Attackers (you move first)")
+        print("2. Play as Defenders (AI moves first)")
+        
+        while True:
+            try:
+                side = int(input("Choose side (1-2): "))
+                if side == 1:
+                    human_player = ATTACKER
+                    ai_player = DEFENDER
+                    break
+                elif side == 2:
+                    human_player = DEFENDER
+                    ai_player = ATTACKER
+                    break
+                else:
+                    print("Please enter 1 or 2.")
+            except ValueError:
+                print("Please enter a number.")
+        
+        # AI difficulty selection
+        print("\nSelect AI difficulty:")
+        print("1. Easy")
+        print("2. Medium") 
+        print("3. Hard")
+        
+        while True:
+            try:
+                diff = int(input("Enter difficulty (1-3): "))
+                if diff == 1:
+                    ai_difficulty = "easy"
+                    break
+                elif diff == 2:
+                    ai_difficulty = "medium"
+                    break
+                elif diff == 3:
+                    ai_difficulty = "hard"
+                    break
+                else:
+                    print("Please enter 1-3.")
+            except ValueError:
+                print("Please enter a number.")
     
-    while True:
-        try:
-            diff = int(input("Enter difficulty (1-3): "))
-            if diff == 1:
-                ai_difficulty = "easy"
-                break
-            elif diff == 2:
-                ai_difficulty = "medium"
-                break
-            elif diff == 3:
-                ai_difficulty = "hard"
-                break
-            else:
-                print("Please enter 1-3.")
-        except ValueError:
-            print("Please enter a number.")
-    
-    print(f"\nStarting game - {ai_difficulty} difficulty")
+    if human_vs_human:
+        print("\nStarting Human vs Human game")
+    else:
+        print(f"\nStarting game - {ai_difficulty} difficulty")
     print_board_with_coords(board)
     
     # Main game loop
@@ -110,14 +139,19 @@ def game_loop():
             print_board_with_coords(board)
             break
         
-        # Get move - Human vs Computer only
+        # Get move - Handle both game modes
         move = None
         
-        if current_player == human_player:
+        if human_vs_human:
+            # Human vs Human - both players are human
             move = get_human_move(board, current_player)
         else:
-            print(f"AI ({current_player}) is thinking...")
-            move = get_ai_move(board, current_player, ai_difficulty)
+            # Human vs Computer
+            if current_player == human_player:
+                move = get_human_move(board, current_player)
+            else:
+                print(f"AI ({current_player}) is thinking...")
+                move = get_ai_move(board, current_player, ai_difficulty)
         
         # Handle game abort or no moves
         if move is None:
