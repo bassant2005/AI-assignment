@@ -1,4 +1,4 @@
-from MAin_logic import *
+from Main_logic import *
 
 def print_board_with_coords(board):
     """Print board with coordinate labels"""
