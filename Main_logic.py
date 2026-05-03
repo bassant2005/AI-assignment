@@ -310,7 +310,13 @@ def is_winner(board):
         elif board[nr][nc] == ATTACKER:
             surrounded += 1
 
-    # Single unified check — walls + attackers all count
+    # A corner square adjacent to the King acts as an extra blocker
+    for cr, cc in CORNERS:
+        if abs(kr - cr) + abs(kc - cc) == 1:
+            surrounded += 1
+            break  # at most one corner can be adjacent at a time
+
+    # Single unified check — walls + adjacent corner + attackers all count
     if surrounded >= 4:
         return "ATTACKER"
 
