@@ -310,13 +310,7 @@ def is_winner(board):
         elif board[nr][nc] == ATTACKER:
             surrounded += 1
 
-    # A corner square adjacent to the King acts as an extra blocker
-    for cr, cc in CORNERS:
-        if abs(kr - cr) + abs(kc - cc) == 1:
-            surrounded += 1
-            break  # at most one corner can be adjacent at a time
-
-    # Single unified check — walls + adjacent corner + attackers all count
+    # Single unified check — walls + attackers all count
     if surrounded >= 4:
         return "ATTACKER"
 
@@ -335,40 +329,36 @@ def apply_capture(board, r2, c2, current_player):
     new_board = [row[:] for row in board]
 
     if current_player == ATTACKER:
-        enemies   = [DEFENDER, KING]
+        enemies    = [DEFENDER]
         friendlies = [ATTACKER]
     else:
-        enemies   = [ATTACKER]
+        enemies    = [ATTACKER]
         friendlies = [DEFENDER]
 
     throne = THRONE
     directions = [(0,1),(0,-1),(1,0),(-1,0)]
 
     for dr, dc in directions:
-        enemy_r, enemy_c   = r2 + dr,     c2 + dc
-        anchor_r, anchor_c = r2 + dr*2,   c2 + dc*2
+        enemy_r, enemy_c   = r2 + dr,   c2 + dc
+        anchor_r, anchor_c = r2 + dr*2, c2 + dc*2
 
         if not within_bounds(enemy_r, enemy_c):
             continue
 
         target_piece = new_board[enemy_r][enemy_c]
-        if target_piece not in enemies or target_piece == KING:
+        if target_piece not in enemies:
             continue
 
-        # anchor = friendly piece, corner, empty throne, OR a wall
+        # Walls don't help capture
         if not within_bounds(anchor_r, anchor_c):
-            is_wall_anchor     = True
-            is_friendly_anchor = False
-            is_corner_anchor   = False
-            is_throne_anchor   = False
-        else:
-            anchor_piece       = new_board[anchor_r][anchor_c]
-            is_wall_anchor     = False
-            is_friendly_anchor = anchor_piece in friendlies
-            is_corner_anchor   = is_corner(anchor_r, anchor_c)
-            is_throne_anchor   = (anchor_r, anchor_c) == throne and anchor_piece == EMPTY
+            continue
 
-        if is_wall_anchor or is_friendly_anchor or is_corner_anchor or is_throne_anchor:
+        anchor_piece       = new_board[anchor_r][anchor_c]
+        is_friendly_anchor = anchor_piece in friendlies
+        is_corner_anchor   = is_corner(anchor_r, anchor_c)
+        is_throne_anchor   = (anchor_r, anchor_c) == throne and anchor_piece == EMPTY
+
+        if is_friendly_anchor or is_corner_anchor or is_throne_anchor:
             new_board[enemy_r][enemy_c] = EMPTY
 
     return new_board
