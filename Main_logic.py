@@ -452,7 +452,12 @@ Returns: (best_score, best_move)
 - best_score: evaluation score from current player's perspective
 - best_move: tuple (r1, c1, r2, c2) representing the best move
 """
-def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player):
+def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player, start_time=None, time_limit=30.0):
+    import time
+    # Time check for hard difficulty to prevent infinite search
+    if start_time and (time.time() - start_time) > time_limit:
+        return evaluate_board(board), None
+    
     # Check for terminal states or depth limit
     winner = is_winner(board)
     if winner is not None or depth == 0:
@@ -464,6 +469,9 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player):
     # If no moves available, evaluate current position
     if not moves:
         return evaluate_board(board), None
+    
+    # Move ordering: prioritize captures and king moves for better pruning
+    moves = order_moves(board, moves, current_player)
     
     best_move = None
     
@@ -478,7 +486,7 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player):
             next_player = DEFENDER if current_player == ATTACKER else ATTACKER
             
             # Recursive call with switched roles
-            eval_score, _ = alpha_beta(new_board, depth - 1, alpha, beta, False, next_player)
+            eval_score, _ = alpha_beta(new_board, depth - 1, alpha, beta, False, next_player, start_time, time_limit)
             
             if eval_score > max_eval:
                 max_eval = eval_score
@@ -499,7 +507,7 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player):
             next_player = DEFENDER if current_player == ATTACKER else ATTACKER
             
             # Recursive call with switched roles
-            eval_score, _ = alpha_beta(new_board, depth - 1, alpha, beta, True, next_player)
+            eval_score, _ = alpha_beta(new_board, depth - 1, alpha, beta, True, next_player, start_time, time_limit)
             
             if eval_score < min_eval:
                 min_eval = eval_score
@@ -512,10 +520,54 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player):
 
 ############################################################
 """
-Difficulty Controller
-Returns search depth based on difficulty level
+Move Ordering for Alpha-Beta Pruning
+Prioritizes moves that are likely to be good for better pruning efficiency
 """
-def get_difficulty_depth(difficulty):
+def order_moves(board, moves, player):
+    scored_moves = []
+    
+    for move in moves:
+        r1, c1, r2, c2 = move
+        score = 0
+        
+        # Prioritize captures
+        new_board = apply_move(board, move)
+        captured_board = apply_capture(new_board, r2, c2, player)
+        
+        # Count captured pieces
+        for r in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE):
+                if board[r][c] != EMPTY and captured_board[r][c] == EMPTY:
+                    score += 10  # Capture is valuable
+        
+        # Prioritize king moves (for defenders)
+        if board[r1][c1] == KING:
+            score += 5
+            
+        # Prioritize moves toward corners (for king)
+        if board[r1][c1] == KING:
+            min_corner_dist = min(abs(r2 - cr) + abs(c2 - cc) for cr, cc in CORNERS)
+            score += (10 - min_corner_dist)  # Closer to corner is better
+        
+        # Prioritize center control (for attackers)
+        if player == ATTACKER:
+            center_dist = abs(r2 - 5) + abs(c2 - 5)
+            score += (10 - center_dist)  # Closer to center is better
+            
+        scored_moves.append((score, move))
+    
+    # Sort by score (descending) and return only moves
+    scored_moves.sort(reverse=True, key=lambda x: x[0])
+    return [move for score, move in scored_moves]
+
+############################################################
+"""
+Difficulty Controller
+Returns search depth based on difficulty level and player type
+Attackers need shallower depth due to having more pieces (branching factor)
+"""
+def get_difficulty_depth(difficulty, player=None):
+    # Assignment requirements: Easy=1, Medium=3, Hard=5
     if difficulty == "easy":
         return 1
     elif difficulty == "medium":
@@ -541,7 +593,12 @@ def get_ai_move(board, ai_player, difficulty="medium"):
     alpha = float('-inf')
     beta = float('inf')
     
-    # Get best move using alpha-beta
-    best_score, best_move = alpha_beta(board, depth, alpha, beta, maximizing, ai_player)
+    # Set time limit for hard difficulty to prevent infinite search
+    import time
+    start_time = time.time()
+    time_limit = 30.0 if difficulty == "hard" else 60.0
+    
+    # Get best move using alpha-beta with time limiting
+    best_score, best_move = alpha_beta(board, depth, alpha, beta, maximizing, ai_player, start_time, time_limit)
     
     return best_move

@@ -1,4 +1,5 @@
 import pygame
+import threading
 from Main_logic import (
     initial_state, get_piece_moves, apply_move, apply_capture,
     is_winner, get_ai_move,
@@ -500,7 +501,15 @@ def make_state(mode="hvh", human_player=None, ai_player=None, difficulty="medium
         "ai_player":      ai_player,       # ATTACKER / DEFENDER / None
         "difficulty":     difficulty,      # "easy" / "medium" / "hard"
         "ai_thinking":    False,           # flag to trigger AI on next frame
+        "ai_move_ready":  None,            # stores calculated AI move
     }
+
+#  AI CALCULATION (runs in background thread)
+def calculate_ai_move(state):
+    """Calculate AI move in background thread."""
+    move = get_ai_move(state["board"], state["ai_player"], state["difficulty"])
+    state["ai_move_ready"] = move
+    state["ai_thinking"] = False
 
 #  EXECUTE A MOVE  (shared by human and AI)
 def execute_move(state, move):
@@ -516,15 +525,20 @@ def execute_move(state, move):
     state["selected"]   = None
     state["valid_moves"] = []
     state["winner"]     = winner
+    state["ai_move_ready"] = None
 
     if not winner:
         state["current_player"] = (
             DEFENDER if state["current_player"] == ATTACKER else ATTACKER
         )
         state["turn_count"] += 1
-        # If the next player is the AI, schedule its move
+        # If the next player is the AI, start thinking in background
         if state["mode"] == "hvc" and state["current_player"] == state["ai_player"]:
             state["ai_thinking"] = True
+            # Start AI calculation in background thread
+            thread = threading.Thread(target=calculate_ai_move, args=(state,))
+            thread.daemon = True
+            thread.start()
 
 #  CLICK / MOVE LOGIC  (human turns only)
 def handle_click(state, pos):
@@ -634,24 +648,25 @@ def test_gui():
                                            human_player=hp,
                                            ai_player=ap,
                                            difficulty=chosen)
-                        # If AI is attacker it moves first → schedule immediately
+                        # If AI is attacker, it should move first - start thinking immediately
                         if ap == ATTACKER:
                             state["ai_thinking"] = True
+                            # Start AI calculation in background thread
+                            thread = threading.Thread(target=calculate_ai_move, args=(state,))
+                            thread.daemon = True
+                            thread.start()
                         phase = "game"
 
                 elif phase == "game":
                     if state and state["winner"] is None:
                         handle_click(state, (mx, my))
 
-        # ── AI MOVE (runs outside event loop so UI stays responsive) ──
-        if phase == "game" and state and state.get("ai_thinking"):
-            state["ai_thinking"] = False
-            if state["winner"] is None:
-                move = get_ai_move(state["board"],
-                                   state["ai_player"],
-                                   state["difficulty"])
-                if move:
-                    execute_move(state, move)
+        # ── AI MOVE (check if AI move is ready from background thread) ──
+        if phase == "game" and state and state.get("ai_move_ready") is not None:
+            move = state["ai_move_ready"]
+            if move and state["winner"] is None:
+                execute_move(state, move)
+            state["ai_move_ready"] = None
 
         # ── RENDER ────────────────────────────────────────────────────
         if phase == "start":
