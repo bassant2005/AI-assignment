@@ -334,46 +334,42 @@ Example:
 def apply_capture(board, r2, c2, current_player):
     new_board = [row[:] for row in board]
 
-    # Identify who the 'enemy' is based on who just moved
     if current_player == ATTACKER:
-        enemies = [DEFENDER, KING]
+        enemies   = [DEFENDER, KING]
         friendlies = [ATTACKER]
     else:
-        # Note: King is 'unarmed' per rules and cannot assist in capturing.
-        enemies = [ATTACKER]
+        enemies   = [ATTACKER]
         friendlies = [DEFENDER]
 
-    center = BOARD_SIZE // 2
-    throne = (center, center)
-
-    # Check all 4 cardinal directions around the piece that just landed
-    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
+    throne = THRONE
+    directions = [(0,1),(0,-1),(1,0),(-1,0)]
 
     for dr, dc in directions:
-        enemy_r, enemy_c = r2 + dr, c2 + dc
-        anchor_r, anchor_c = r2 + (dr * 2), c2 + (dc * 2)
+        enemy_r, enemy_c   = r2 + dr,     c2 + dc
+        anchor_r, anchor_c = r2 + dr*2,   c2 + dc*2
 
-        # 1. Ensure the 'enemy' and the 'anchor' positions are on the board
-        if within_bounds(enemy_r, enemy_c) and within_bounds(anchor_r, anchor_c):
-            target_piece = new_board[enemy_r][enemy_c]
-            anchor_piece = new_board[anchor_r][anchor_c]
+        if not within_bounds(enemy_r, enemy_c):
+            continue
 
-            # 2. Check if the adjacent piece is actually an enemy
-            if target_piece in enemies:
+        target_piece = new_board[enemy_r][enemy_c]
+        if target_piece not in enemies or target_piece == KING:
+            continue
 
-                # Per rules: The King is captured differently (surrounded on 4 sides),
-                # so we skip him here and let is_winner handle his capture.
-                if target_piece == KING:
-                    continue
+        # anchor = friendly piece, corner, empty throne, OR a wall
+        if not within_bounds(anchor_r, anchor_c):
+            is_wall_anchor     = True
+            is_friendly_anchor = False
+            is_corner_anchor   = False
+            is_throne_anchor   = False
+        else:
+            anchor_piece       = new_board[anchor_r][anchor_c]
+            is_wall_anchor     = False
+            is_friendly_anchor = anchor_piece in friendlies
+            is_corner_anchor   = is_corner(anchor_r, anchor_c)
+            is_throne_anchor   = (anchor_r, anchor_c) == throne and anchor_piece == EMPTY
 
-                # 3. Check for valid 'Anchor' (Sandwich side)
-                # An anchor can be a friendly piece, a corner, or the empty throne
-                is_friendly_anchor = anchor_piece in friendlies
-                is_corner_anchor = is_corner(anchor_r, anchor_c)
-                is_throne_anchor = (anchor_r, anchor_c) == throne and anchor_piece == EMPTY
-
-                if is_friendly_anchor or is_corner_anchor or is_throne_anchor:
-                    new_board[enemy_r][enemy_c] = EMPTY
+        if is_wall_anchor or is_friendly_anchor or is_corner_anchor or is_throne_anchor:
+            new_board[enemy_r][enemy_c] = EMPTY
 
     return new_board
 
