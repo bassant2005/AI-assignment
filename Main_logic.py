@@ -310,27 +310,15 @@ def is_winner(board):
         elif board[nr][nc] == ATTACKER:
             surrounded += 1
 
-    # CASE 1: Fully surrounded (middle board)
-    if surrounded == 4:
-        return "ATTACKER"
-
-    # CASE 2: King on edge → 3 sides needed (wall already blocks 1)
-    if (kr == 0 or kr == BOARD_SIZE-1 or kc == 0 or kc == BOARD_SIZE-1):
-        if surrounded >= 3:
-            return "ATTACKER"
-
-    # CASE 3: King on a corner → only 2 sides needed (2 walls block the other 2)
-    # Using direct coordinates instead of is_corner() to avoid the dead code issue.
-    if (kr, kc) in [(0,0), (0,10), (10,0), (10,10)]:
-        if surrounded >= 2:
-            return "ATTACKER"
-
-    # CASE 4 — King one step from a corner
-    # Two board walls already block 2 sides → only 2 attackers needed.
+    # A corner square adjacent to the King acts as an extra blocker
     for cr, cc in CORNERS:
-        if abs(kr - cr) + abs(kc - cc) == 1:   # Manhattan distance = 1
-            if surrounded >= 2:
-                return "ATTACKER"
+        if abs(kr - cr) + abs(kc - cc) == 1:
+            surrounded += 1
+            break  # at most one corner can be adjacent at a time
+
+    # Single unified check — walls + adjacent corner + attackers all count
+    if surrounded >= 4:
+        return "ATTACKER"
 
     return None
 
