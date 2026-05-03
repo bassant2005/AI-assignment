@@ -1,5 +1,5 @@
 import pygame
-from Assignment3 import (
+from MAin_logic import (
     initial_state, get_piece_moves,
     ATTACKER, DEFENDER, KING, EMPTY, BOARD_SIZE,
     CORNERS, THRONE, belongs_to
