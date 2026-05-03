@@ -72,7 +72,6 @@ def game_loop():
         print("\nHuman vs Human mode selected!")
         print("Attackers move first.")
         human_player = None  # Not used in HvH
-        ai_player = None     # Not used in HvH
         ai_difficulty = None # Not used in HvH
     else:
         # Human vs Computer setup
@@ -85,11 +84,9 @@ def game_loop():
                 side = int(input("Choose side (1-2): "))
                 if side == 1:
                     human_player = ATTACKER
-                    ai_player = DEFENDER
                     break
                 elif side == 2:
                     human_player = DEFENDER
-                    ai_player = ATTACKER
                     break
                 else:
                     print("Please enter 1 or 2.")
@@ -138,9 +135,6 @@ def game_loop():
             print(f"\n🎮 GAME OVER! {winner} wins!")
             print_board_with_coords(board)
             break
-        
-        # Get move - Handle both game modes
-        move = None
         
         if human_vs_human:
             # Human vs Human - both players are human

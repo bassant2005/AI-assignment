@@ -25,14 +25,13 @@ Winning conditions:
 """
 These constants define the entire game environment.
 """
-
 EMPTY = '.'
 KING = 'K'
 DEFENDER = 'D'
 ATTACKER = 'A'
 BOARD_SIZE = 11
 CORNERS = [(0,0), (0,10), (10,0), (10,10)]
-THRONE = (BOARD_SIZE // 2, BOARD_SIZE // 2)   # ← ADDED: (5,5) center square
+THRONE = (BOARD_SIZE // 2, BOARD_SIZE // 2)
 
 ############################################################
 """
@@ -103,7 +102,6 @@ def within_bounds(r, c):
     return 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE
 
 ############################################################
-# ═══ ADDED by Person 3 ════════════════════════════════════
 """
 Helper: returns True if the piece belongs to the given player.
 Defenders 'own' both DEFENDER pieces AND the KING.
@@ -115,7 +113,6 @@ def belongs_to(piece, player):
     return piece in (DEFENDER, KING)   # DEFENDER side owns the King too
 
 ############################################################
-# ═══ ADDED by Person 3 ════════════════════════════════════
 """
 Helper: returns True if (r, c) is the central Throne square.
 Used by is_valid_move (restricted landing) and apply_capture (anchor rule).
@@ -171,7 +168,6 @@ def get_all_moves(board, player):
     return moves
 
 ############################################################
-# ═══ ADDED by Person 3 ════════════════════════════════════
 """
 Returns all legal destination squares (r2, c2) for the piece at (r, c).
 Used by the GUI to highlight valid moves when a piece is selected.
@@ -204,9 +200,9 @@ REFINED by Person 1:
   - Added current_player parameter: piece must belong to the current player.
   - Only the KING may land on the Throne or a Corner square.
 """
-def is_valid_move(board, r1, c1, r2, c2, current_player):   # ← ADDED: current_player
+def is_valid_move(board, r1, c1, r2, c2, current_player):
 
-    # ── ADDED: correct player must own the piece ──────────────
+    # correct player must own the piece
     piece = board[r1][c1]
     if not belongs_to(piece, current_player):
         return False
@@ -235,7 +231,7 @@ def is_valid_move(board, r1, c1, r2, c2, current_player):   # ← ADDED: current
         nr += dr
         nc += dc
 
-    # ── ADDED: only the King may stop on the Throne or a Corner ─
+    # only the King may stop on the Throne or a Corner
     if piece != KING:
         if is_throne(r2, c2) or is_corner(r2, c2):
             return False
@@ -263,16 +259,6 @@ def apply_move(board, move):
     new_board[r1][c1] = EMPTY
 
     return new_board
-
-############################################################
-"""
-Prints board in readable format.
-"""
-def print_board(board):
-    for row in board:
-        print(" ".join(row))
-
-    print("\n")
 
 ############################################################
 """
@@ -339,7 +325,7 @@ def is_winner(board):
         if surrounded >= 2:
             return "ATTACKER"
 
-    # ── ADDED (Person 1): CASE 4 — King one step from a corner ──
+    # CASE 4 — King one step from a corner
     # Two board walls already block 2 sides → only 2 attackers needed.
     for cr, cc in CORNERS:
         if abs(kr - cr) + abs(kc - cc) == 1:   # Manhattan distance = 1
@@ -428,7 +414,7 @@ def evaluate_board(board):
 
     kr, kc = king_pos
 
-    # ── MATERIAL ──────────────────────────────────────────────────
+    # ── MATERIAL ──
     for r in range(BOARD_SIZE):
         for c in range(BOARD_SIZE):
             if board[r][c] == DEFENDER:
@@ -436,10 +422,10 @@ def evaluate_board(board):
             elif board[r][c] == ATTACKER:
                 score -= 10
 
-    # ── KING SAFETY ───────────────────────────────────────────────
+    # ── KING SAFETY ──
     # Big bonus if King has already reached a corner
     if is_corner(kr, kc):
-        return 9999   # ← CHANGED: return immediately (terminal win state)
+        return 9999   # return immediately (terminal win state)
 
     # Penalty for each Attacker directly adjacent to the King
     for dr, dc in [(1,0), (-1,0), (0,1), (0,-1)]:
@@ -447,7 +433,7 @@ def evaluate_board(board):
         if within_bounds(nr, nc) and board[nr][nc] == ATTACKER:
             score -= 50
 
-    # ── KING MOBILITY ─────────────────────────────────────────────
+    # ── KING MOBILITY ──
     # Count how many squares the King can legally slide to
     for dr, dc in [(1,0), (-1,0), (0,1), (0,-1)]:
         nr, nc = kr + dr, kc + dc
@@ -456,7 +442,7 @@ def evaluate_board(board):
             nr += dr
             nc += dc
 
-    # ── ADDED: CORNER PROXIMITY ───────────────────────────────────
+    # ── ADDED: CORNER PROXIMITY ──
     # Reward Defender when King is close to an escape corner
     min_corner_dist = min(abs(kr - cr) + abs(kc - cc) for cr, cc in CORNERS)
     if min_corner_dist <= 2:
@@ -464,7 +450,7 @@ def evaluate_board(board):
     elif min_corner_dist <= 4:
         score += 10
 
-    # ── ADDED: DEFENDER COHESION ──────────────────────────────────
+    # ── ADDED: DEFENDER COHESION ──
     # Small bonus for keeping Defenders near the King (protective formation)
     for r in range(BOARD_SIZE):
         for c in range(BOARD_SIZE):
@@ -474,25 +460,6 @@ def evaluate_board(board):
                     score += 3
 
     return score
-
-############################################################
-"""
-================================================================================
-MEMBER 2: THE STRATEGIST (AI Engine & Alpha-Beta)
-================================================================================
-1. CORE ENGINE (`alpha_beta`):
-   - Implement the recursive Alpha-Beta function.
-   - Must return a tuple of (best_score, best_move).
-
-2. MOVE SIMULATION:
-   - Ensure the AI uses `apply_move` (which creates board copies) to test future 
-     scenarios without corrupting the live game state.
-
-3. DIFFICULTY CONTROLLER:
-   - Create a function to handle search depth based on user selection:
-     - Easy (Depth 1), Medium (Depth 3), Hard (Depth 5).
-================================================================================
-"""
 
 ############################################################
 """
@@ -594,40 +561,3 @@ def get_ai_move(board, ai_player, difficulty="medium"):
     best_score, best_move = alpha_beta(board, depth, alpha, beta, maximizing, ai_player)
     
     return best_move
-
-############################################################
-"""
-================================================================================
-MEMBER 1: THE RULE MASTER (Logic, Evaluation & Rules)
-================================================================================
-1. PATH VALIDATION (`is_valid_move`):
-   - Implement the "No Jumping" rule. Use a loop to check all squares between 
-     (r1, c1) and (r2, c2). Return False if any square is not EMPTY.
-
-2. UTILITY FUNCTION (`evaluate_board`):
-   - Create a scoring system for Alpha-Beta:
-     - Material: +10 per Defender, -10 per Attacker.
-     - King Safety: +500 for King on Corner, -50 per adjacent Attacker.
-     - King Mobility: +5 per available move for the King.
-
-3. WIN CONDITION REFINEMENT (`is_winner`):
-   - Update King capture logic: 4 attackers needed in the center, 3 on the edge, 
-     and 2 if the King is against a corner.
-
-================================================================================
-MEMBER 3: THE ARCHITECT (GUI & Game Controller)
-================================================================================
-1. PYGAME VISUALS:
-   - Build the 11x11 grid. Color the Throne (center) and 4 Corners differently.
-   - Load/Draw pieces: Use gold for King, white for Defenders, black for Attackers.
-
-2. TURN MANAGEMENT:
-   - Create the loop that handles "Human (A) -> AI (D)" or "AI (A) -> Human (D)".
-   - Note: Per rules, Attackers MUST move first.
-
-3. EVENT HANDLING:
-   - Map mouse clicks to board coordinates.
-   - Trigger Member 1's `apply_capture` after every move and check for `is_winner`.
-================================================================================
-"""
-############################################################
