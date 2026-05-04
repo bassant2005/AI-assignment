@@ -341,13 +341,13 @@ def apply_capture(board, r2, c2, current_player):
         enemies    = [ATTACKER]
         friendlies = [DEFENDER]
 
-    throne = THRONE
     directions = [(0,1),(0,-1),(1,0),(-1,0)]
 
     for dr, dc in directions:
         enemy_r, enemy_c   = r2 + dr,   c2 + dc
         anchor_r, anchor_c = r2 + dr*2, c2 + dc*2
 
+        # Enemy must be on the board
         if not within_bounds(enemy_r, enemy_c):
             continue
 
@@ -355,14 +355,18 @@ def apply_capture(board, r2, c2, current_player):
         if target_piece not in enemies:
             continue
 
-        # Walls don't help capture
+        # Anchor must be on the board — walls do NOT count as anchors
         if not within_bounds(anchor_r, anchor_c):
             continue
 
-        anchor_piece       = new_board[anchor_r][anchor_c]
+        anchor_piece = new_board[anchor_r][anchor_c]
+
         is_friendly_anchor = anchor_piece in friendlies
         is_corner_anchor   = is_corner(anchor_r, anchor_c)
-        is_throne_anchor   = (anchor_r, anchor_c) == throne and anchor_piece == EMPTY
+        # Throne only anchors if it is EMPTY (vacated by King)
+        is_throne_anchor   = ((anchor_r, anchor_c) == THRONE 
+                               and anchor_piece == EMPTY
+                               and new_board[enemy_r][enemy_c] != KING)
 
         if is_friendly_anchor or is_corner_anchor or is_throne_anchor:
             new_board[enemy_r][enemy_c] = EMPTY
