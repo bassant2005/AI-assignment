@@ -426,7 +426,7 @@ def evaluate_board(board):
             nr += dr
             nc += dc
 
-    # ── ADDED: CORNER PROXIMITY ──
+    # ── CORNER PROXIMITY ──
     # Reward Defender when King is close to an escape corner
     min_corner_dist = min(abs(kr - cr) + abs(kc - cc) for cr, cc in CORNERS)
     if min_corner_dist <= 2:
@@ -434,7 +434,7 @@ def evaluate_board(board):
     elif min_corner_dist <= 4:
         score += 10
 
-    # ── ADDED: DEFENDER COHESION ──
+    # ── DEFENDER COHESION ──
     # Small bonus for keeping Defenders near the King (protective formation)
     for r in range(BOARD_SIZE):
         for c in range(BOARD_SIZE):
