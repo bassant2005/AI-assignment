@@ -126,15 +126,16 @@ def game_loop():
     turn_count = 0
     while True:
         turn_count += 1
-        print(f"\n--- Turn {turn_count} ---")
-        print(f"Current player: {current_player}")
-        
+
         # Check for winner before move
         winner = is_winner(board)
         if winner:
             print(f"\n🎮 GAME OVER! {winner} wins!")
             print_board_with_coords(board)
             break
+
+        print(f"\n--- Turn {turn_count} ---")
+        print(f"Current player: {current_player}")
         
         if human_vs_human:
             # Human vs Human - both players are human
