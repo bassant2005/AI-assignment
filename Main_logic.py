@@ -444,6 +444,47 @@ def evaluate_board(board):
                     score += 3
 
     return score
+############################################################
+"""
+Move Ordering for Alpha-Beta Pruning
+Prioritizes moves that are likely to be good for better pruning efficiency
+"""
+def order_moves(board, moves, player):
+    scored_moves = []
+    
+    for move in moves:
+        r1, c1, r2, c2 = move
+        score = 0
+        
+        # Prioritize captures
+        new_board = apply_move(board, move)
+        captured_board = apply_capture(new_board, r2, c2, player)
+        
+        # Count captured pieces
+        for r in range(BOARD_SIZE):
+            for c in range(BOARD_SIZE):
+                if board[r][c] != EMPTY and captured_board[r][c] == EMPTY:
+                    score += 10  # Capture is valuable
+        
+        # Prioritize king moves (for defenders)
+        if board[r1][c1] == KING:
+            score += 5
+            
+        # Prioritize moves toward corners (for king)
+        if board[r1][c1] == KING:
+            min_corner_dist = min(abs(r2 - cr) + abs(c2 - cc) for cr, cc in CORNERS)
+            score += (10 - min_corner_dist)  # Closer to corner is better
+        
+        # Prioritize center control (for attackers)
+        if player == ATTACKER:
+            center_dist = abs(r2 - 5) + abs(c2 - 5)
+            score += (10 - center_dist)  # Closer to center is better
+            
+        scored_moves.append((score, move))
+    
+    # Sort by score (descending) and return only moves
+    scored_moves.sort(reverse=True, key=lambda x: x[0])
+    return [move for score, move in scored_moves]
 
 ############################################################
 """
@@ -517,48 +558,6 @@ def alpha_beta(board, depth, alpha, beta, maximizing_player, current_player, sta
             if beta <= alpha:
                 break  # Alpha cutoff
         return min_eval, best_move
-
-############################################################
-"""
-Move Ordering for Alpha-Beta Pruning
-Prioritizes moves that are likely to be good for better pruning efficiency
-"""
-def order_moves(board, moves, player):
-    scored_moves = []
-    
-    for move in moves:
-        r1, c1, r2, c2 = move
-        score = 0
-        
-        # Prioritize captures
-        new_board = apply_move(board, move)
-        captured_board = apply_capture(new_board, r2, c2, player)
-        
-        # Count captured pieces
-        for r in range(BOARD_SIZE):
-            for c in range(BOARD_SIZE):
-                if board[r][c] != EMPTY and captured_board[r][c] == EMPTY:
-                    score += 10  # Capture is valuable
-        
-        # Prioritize king moves (for defenders)
-        if board[r1][c1] == KING:
-            score += 5
-            
-        # Prioritize moves toward corners (for king)
-        if board[r1][c1] == KING:
-            min_corner_dist = min(abs(r2 - cr) + abs(c2 - cc) for cr, cc in CORNERS)
-            score += (10 - min_corner_dist)  # Closer to corner is better
-        
-        # Prioritize center control (for attackers)
-        if player == ATTACKER:
-            center_dist = abs(r2 - 5) + abs(c2 - 5)
-            score += (10 - center_dist)  # Closer to center is better
-            
-        scored_moves.append((score, move))
-    
-    # Sort by score (descending) and return only moves
-    scored_moves.sort(reverse=True, key=lambda x: x[0])
-    return [move for score, move in scored_moves]
 
 ############################################################
 """
