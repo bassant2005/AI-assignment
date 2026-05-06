@@ -4,7 +4,7 @@ from Main_logic import (
     initial_state, get_piece_moves, apply_move, apply_capture,
     is_winner, get_ai_move,
     ATTACKER, DEFENDER, KING, EMPTY, BOARD_SIZE,
-    CORNERS, THRONE, belongs_to
+    is_corner, is_throne, belongs_to
 )
 
 pygame.init()
@@ -81,12 +81,6 @@ def px_to_cell(px, py):
     if 0 <= r < BOARD_SIZE and 0 <= c < BOARD_SIZE:
         return int(r), int(c)
     return None, None
-
-def is_corner(r, c):
-    return (r, c) in CORNERS
-
-def is_throne(r, c):
-    return (r, c) == THRONE
 
 def draw_rounded_rect(surf, color, rect, radius=6, width=0):
     pygame.draw.rect(surf, color, rect, width, border_radius=radius)
